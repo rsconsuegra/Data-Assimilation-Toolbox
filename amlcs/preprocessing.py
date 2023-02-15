@@ -41,7 +41,7 @@ class Preprocessing:
     def set_numerical_model(self) -> None:
         """Create numerical model."""
         numerical_model = NM(self.res_size, self.res_vars)
-        log.info(numerical_model)
+        log.info(numerical_model.vars_by_layers)
 
 
 if __name__ == "__main__":
