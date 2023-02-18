@@ -10,6 +10,7 @@ class NumericalModel:
         nmonths = times[0]
         days = times[1]
         restart = times[2]
+        return nmonths,days,restart
         #self.create_cls_instep_file(nmonths, days, restart)
         #self.create_cls_indyns_file()
         #os.system(f"mv cls_instep.h {self.nmonths}cls_instep.h; mv cls_indyns.h {self.source_local}cls_indyns.h; cd {self.source_local}/ ; sh compile.sh>out.txt;")
