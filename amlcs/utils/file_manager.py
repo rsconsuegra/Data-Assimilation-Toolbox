@@ -4,7 +4,7 @@ from pathlib import Path
 
 from omegaconf import DictConfig
 
-from amlcs import MODEL_PATH, RESULTS_FOLDER, log
+from amlcs import MODEL_PATH, RESULTS_FOLDER, ROOT, log
 
 
 class FileManager:
@@ -32,23 +32,23 @@ class FileManager:
         code_path: str = ""
         if pre_cfg.code:
             code_path = pre_cfg.code
-            log.debug("Custom code path set")
+            log.debug("Custom code path used.")
         else:
             res_ens = f"{pre_cfg.res_name}_{pre_cfg.Nens}"
             per_m = f"{pre_cfg.per}_{pre_cfg.M}"
             code_path = f"{res_ens}_{per_m}"
-            log.debug("Default code path used")
+            log.debug("Default code path used.")
         path: str = f"{pre_cfg.folder_prep}/{code_path}"
         return path
 
     def set_experiment_structure(self, num_of_ens: int, res_name: str) -> None:
         """Create experiment's foledr structure and copy model."""
-        self.create_experiments_folder()
-        self.create_model_folders(num_of_ens)
-        self.copy_model(res_name)
+        self._create_experiments_folder()
+        self._create_model_folders(num_of_ens)
+        self._copy_model(res_name)
         log.info("Model copied")
 
-    def create_experiments_folder(self) -> None:
+    def _create_experiments_folder(self) -> None:
         """Create folder structure for experiment.
 
         This method creates the root folders required to perform
@@ -61,7 +61,7 @@ class FileManager:
         self.comp_model_path.mkdir(parents=True, exist_ok=True)
         log.info("%s folder created", self.comp_model_path)
 
-    def create_model_folders(self, num_of_ens: int) -> None:
+    def _create_model_folders(self, num_of_ens: int) -> None:
         """Create folders for data assimilation under the experiment path.
 
         Parameters
@@ -81,14 +81,57 @@ class FileManager:
             (self.ensemble_0 / f"ens_{ensemble}").mkdir(exist_ok=True)
         log.info("Model folders created")
 
-    def copy_model(self, res_name: str) -> None:
+    def _copy_model(self, res_name: str) -> None:
         """Copy model to data assimilation manipulation."""
         log.info("Copying model")
         res_model = MODEL_PATH / res_name
         shutil.copytree(res_model, self.source_model_local, dirs_exist_ok=True)
 
-    def delte_model_folders(self) -> None:
+    def delete_model_folders(self) -> None:
         """Delete folders relative to the model."""
         shutil.rmtree(self.ensemble_0)
         shutil.rmtree(self.source_model_local)
         shutil.rmtree(self.model_local)
+
+    def create_cls_instep_file(self, months: str, days: str, res: str, restart: str = "1") -> None:
+        """Create a cls_instep.h file using the experiment configuration.
+
+        This file is created using a templated that can be found in the templates folder.
+        Contains the description of each model parameter, and the default configurations.
+
+        Parameters
+        ----------
+        months : str
+            Number of months for the model propagation.
+        days : str
+            Number of days for the model propagation.
+        res : str
+            Model resolution.
+        restart : str, optional
+            Defines if model runs from rest or by an initial state, by default "1".
+
+        """
+        with open(self.source_model_local / "cls_instep.h", "w", encoding="utf8") as copy_instep:
+            with open(ROOT / "templates" / "cls_instep.h", "r", encoding="utf8") as file:
+                cls_instep = file.read()
+                if res in ["t21", "t30"]:
+                    nsteps = "36"
+                    ndia = "36*5"
+                elif res == "t47":
+                    nsteps = "72"
+                    ndia = "72*5"
+                elif res == "t63":
+                    nsteps = "96"
+                    ndia = "96*5"
+                elif res == "t106":
+                    nsteps = "106"
+                    ndia = "106*5"
+                values = {
+                    "nstep": nsteps,
+                    "nstadia": ndia,
+                    "ndia": months,
+                    "ndays": days,
+                    "restart": restart,
+                }
+                new_text = cls_instep.format(**values)
+                copy_instep.write(new_text)
