@@ -10,7 +10,7 @@ jobs:
           pkg-manager: poetry
       - run:
           command: |
-            pytest
+            poetry run pytest
           name: Test it
 workflows:
   main:
