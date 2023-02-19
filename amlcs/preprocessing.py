@@ -13,7 +13,7 @@ from amlcs.utils.file_manager import FileManager as FM
 def main(cfg: DictConfig) -> None:
     """Driver for pre-processing."""
     prepro = Preprocessing(cfg)
-    prepro.create_experiments_folder()
+    prepro.set_experiments_files()
     prepro.set_numerical_model()
 
 
@@ -30,10 +30,10 @@ class Preprocessing:
         self.pre_cfg: DictConfig = cfg.preprocessing
         self.res_size: Dict = cfg.model_res.get(self.pre_cfg.res_name)
         self.res_vars: Dict = cfg.model_res.get("variables")
-        log.info("%s resolution will be used", self.pre_cfg.res_name.upper())
-        log.info("Parameters: %s", OmegaConf.to_yaml(self.pre_cfg))
+        log.debug("%s resolution will be used", self.pre_cfg.res_name.upper())
+        log.debug("Parameters: %s", OmegaConf.to_yaml(self.pre_cfg))
 
-    def create_experiments_folder(self) -> None:
+    def set_experiments_files(self) -> None:
         """Create all folders required for experimentation."""
         file_manager = FM(self.pre_cfg)
         file_manager.set_experiment_structure(self.pre_cfg.Nens, self.pre_cfg.res_name)

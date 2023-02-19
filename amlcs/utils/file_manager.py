@@ -4,7 +4,7 @@ from pathlib import Path
 
 from omegaconf import DictConfig
 
-from amlcs import MODEL_PATH, RESULTS_FOLDER, log
+from amlcs import MODEL_PATH, RESULTS_FOLDER, ROOT, log
 
 
 class FileManager:
@@ -92,3 +92,46 @@ class FileManager:
         shutil.rmtree(self.ensemble_0)
         shutil.rmtree(self.source_model_local)
         shutil.rmtree(self.model_local)
+
+    def create_cls_instep_file(self, months: str, days: str, res: str, restart: str = "1") -> None:
+        """Create a cls_instep.h file using the experiment configuration.
+
+        This file is created using a templated that can be found in the templates folder.
+        Contains the description of each model parameter, and the default configurations.
+
+        Parameters
+        ----------
+        months : str
+            Number of months for the model propagation.
+        days : str
+            Number of days for the model propagation.
+        res : str
+            Model resolution.
+        restart : str, optional
+            Defines if model runs from rest or by an initial state, by default "1".
+
+        """
+        with open(self.source_model_local / "cls_instep.h", "w", encoding="utf8") as copy_instep:
+            with open(ROOT / "templates" / "cls_instep.h", "r", encoding="utf8") as file:
+                cls_instep = file.read()
+                if res in ["t21", "t30"]:
+                    nsteps = "36"
+                    ndia = "36*5"
+                elif res == "t47":
+                    nsteps = "72"
+                    ndia = "72*5"
+                elif res == "t63":
+                    nsteps = "96"
+                    ndia = "96*5"
+                elif res == "t106":
+                    nsteps = "106"
+                    ndia = "106*5"
+                values = {
+                    "nstep": nsteps,
+                    "nstadia": ndia,
+                    "ndia": months,
+                    "ndays": days,
+                    "restart": restart,
+                }
+                new_text = cls_instep.format(**values)
+                copy_instep.write(new_text)
